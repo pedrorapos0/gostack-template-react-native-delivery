@@ -74,6 +74,14 @@ const FoodDetails: React.FC = () => {
   useEffect(() => {
     async function loadFood(): Promise<void> {
       // Load a specific food with extras based on routeParams id
+      const response = await api.get(`foods/${routeParams.id}`);
+      setFood(response.data);
+      const apiExtras: Extra[] = response.data.extras;
+      apiExtras.map(extra => {
+        extra.quantity = 0;
+        return extra;
+      });
+      setExtras(apiExtras);
     }
 
     loadFood();
@@ -81,30 +89,58 @@ const FoodDetails: React.FC = () => {
 
   function handleIncrementExtra(id: number): void {
     // Increment extra quantity
+    const copyExtras = extras.map(extra => {
+      if (extra.id === id) {
+        extra.quantity += 1;
+        return extra;
+      }
+      return extra;
+    });
+    setExtras([...copyExtras]);
   }
 
   function handleDecrementExtra(id: number): void {
     // Decrement extra quantity
+    const copyExtras = extras.map(extra => {
+      if (extra.id === id && extra.quantity > 0) {
+        extra.quantity -= 1;
+        return extra;
+      }
+      return extra;
+    });
+    setExtras([...copyExtras]);
   }
 
   function handleIncrementFood(): void {
+    setFoodQuantity(foodQuantity + 1);
     // Increment food quantity
   }
 
   function handleDecrementFood(): void {
+    if (foodQuantity > 1) {
+      setFoodQuantity(foodQuantity - 1);
+    }
     // Decrement food quantity
   }
 
   const toggleFavorite = useCallback(() => {
     // Toggle if food is favorite or not
+    setIsFavorite(!isFavorite);
   }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
     // Calculate cartTotal
+    return formatValue(
+      food.price * foodQuantity +
+        extras
+          .map(extra => extra.quantity * extra.value)
+          .reduce((total, valor) => total + valor, 0),
+    );
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
     // Finish the order and save on the API
+    await api.post('orders', { food });
   }
 
   // Calculate the correct icon name
